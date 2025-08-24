@@ -59,8 +59,8 @@ const BalanceGame = () => {
       const physics = physicsRef.current;
 
       // Calculate torque based on arm positions and center of mass
-      const armWeight = 0.2; // Weight contribution of arms
-      const bodyWeight = 0.8; // Weight of body
+      const armWeight = 0.5; // Weight contribution of arms
+      const bodyWeight = 0.5; // Weight of body
 
       // Calculate arm center of mass offset based on mouse position
       const armOffsetX = (mousePos.x - physics.basePosX) * 0.3; // Scale down the arm influence
@@ -81,9 +81,9 @@ const BalanceGame = () => {
       const disturbance = (Math.random() - 0.5) * 0.0002;
 
       // Update angular velocity and angle
-      physics.angularVelocity += (torque + disturbance) * deltaTime * 0.001; // Scale down by 0.001 for milliseconds
+      physics.angularVelocity += (torque + disturbance) * deltaTime * 0.005; // Scale down by 0.001 for milliseconds
       physics.angularVelocity *= 0.99; // Damping
-      physics.angle += physics.angularVelocity * deltaTime * 0.001;
+      physics.angle += physics.angularVelocity * deltaTime * 0.005;
 
       // Check if fallen
       if (Math.abs(physics.angle) > Math.PI / 3) {
