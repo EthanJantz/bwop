@@ -8,6 +8,7 @@ const BalanceGame = () => {
   const [mousePos, setMousePos] = useState({ x: 400, y: 300 });
 
   // Physics state
+  // TODO: Update references to physicsRef
   const physicsRef = useRef({
     angle: 0, // lean angle in radians
     angularVelocity: 0,
@@ -16,7 +17,9 @@ const BalanceGame = () => {
     time: 0,
   });
 
+
   // Calculate inverse kinematics for arm
+  // TODO: Remove outside of component or put in useCallback
   const calculateIK = (
     shoulderX,
     shoulderY,
@@ -59,10 +62,12 @@ const BalanceGame = () => {
       const physics = physicsRef.current;
 
       // Calculate torque based on arm positions and center of mass
-      const armWeight = 0.5; // Weight contribution of arms
+      const armWeight = 0.8; // Weight contribution of arms
       const bodyWeight = 0.5; // Weight of body
 
       // Calculate arm center of mass offset based on mouse position
+      // TODO: armOffset should be relative to body, not basePos
+      // TODO: armOffset should be based on arm position, not mouse position
       const armOffsetX = (mousePos.x - physics.basePosX) * 0.3; // Scale down the arm influence
 
       // Body center of mass shifts with lean
@@ -326,6 +331,7 @@ const BalanceGame = () => {
   }, []);
 
   // Reset game
+  // TODO: Wrap in useCallback
   const resetGame = () => {
     physicsRef.current = {
       angle: 0,
@@ -339,6 +345,7 @@ const BalanceGame = () => {
   };
 
   // Start game loop
+  // TODO: Rewrite w/o useEffect (maybe useState)
   useEffect(() => {
     if (gameState === "playing") {
       animationRef.current = requestAnimationFrame(gameLoop);
