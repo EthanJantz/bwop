@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // Calculate inverse kinematics for arm
-// TODO: Remove outside of component or put in useCallback
 const calculateIK = (
   shoulderX,
   shoulderY,
@@ -58,7 +57,13 @@ const BalanceGame = () => {
     angularVelocity: 0,
     basePosX: 400,
     time: 0,
+    leftArmPosX: 200,
+    leftArmPosY: 200,
+    rightArmPosX: 200,
+    rightArmPosY: 200
   });
+
+  
 
   const calculateBody = useCallback(() => {
     const canvas = canvasRef.current;
@@ -78,24 +83,28 @@ const BalanceGame = () => {
     const shoulderY = hipY - bodyLength;
     const headY = shoulderY - headRadius - 10;
 
+    physics.leftArmPosX = mousePos.x;
+    physics.leftArmPosY = mousePos.y;
+
     // Calculate arm positions with IK
     const leftArm = calculateIK(
-      physics.basePosX - 5,
+      physics.basePosX - Math.sin(physics.angle),
       shoulderY,
-      mousePos.x - 20,
-      mousePos.y,
+      physics.leftArmPosX,
+      physics.leftArmPosY,
       armLength1,
       armLength2,
     );
 
     const rightArm = calculateIK(
-      physics.basePosX + 5,
+      physics.basePosX + Math.sin(physics.angle),
       shoulderY,
-      mousePos.x + 20,
-      mousePos.y,
+      physics.rightArmPosX,
+      physics.rightArmPosY,
       armLength1,
       armLength2,
     );
+
     return {
       headRadius,
       bodyLength,
@@ -371,7 +380,6 @@ const BalanceGame = () => {
   };
 
   // Start game loop
-  // TODO: Rewrite w/o useEffect (maybe useState)
   useEffect(() => {
     if (gameState === "playing") {
       animationRef.current = requestAnimationFrame(gameLoop);
