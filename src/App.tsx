@@ -49,7 +49,7 @@ const BalanceGame = () => {
   const animationRef = useRef(null);
   const [gameState, setGameState] = useState("playing"); // 'playing', 'gameOver'
   const scoreRef = useRef(0);
-  const mouseRef = useRef({ x: 400, y: 300 });
+  const mouseRef = useRef({ x: 400, y: 300, side: "left" });
 
   // Physics state
   const physicsRef = useRef({
@@ -83,9 +83,18 @@ const BalanceGame = () => {
     const shoulderY = hipY - bodyLength;
     const headY = shoulderY - headRadius - 10;
 
-    physics.leftArmPosX = mousePos.x;
-    physics.leftArmPosY = mousePos.y;
-
+    // some button/mouse press switches between left and right arm
+    switch(mousePos.side) { 
+      case "left":
+        physics.leftArmPosX = mousePos.x;
+        physics.leftArmPosY = mousePos.y;
+        break;
+      case "right":
+        physics.rightArmPosX = mousePos.x;
+        physics.rightArmPosY = mousePos.y;
+        break;
+    }
+    
     // Calculate arm positions with IK
     const leftArm = calculateIK(
       physics.basePosX - Math.sin(physics.angle),
@@ -122,13 +131,12 @@ const BalanceGame = () => {
 
   const updatePhysics = useCallback((deltaTime) => {
     const physics = physicsRef.current;
-    const mousePos = mouseRef.current;
 
     const body = calculateBody();
 
     // Calculate torque based on arm positions and center of mass
-    const armWeight = 0.8; // Weight contribution of arms
-    const bodyWeight = 0.5; // Weight of body
+    const armWeight = 0.3; // Weight contribution of arms
+    const bodyWeight = 0.7; // Weight of body
 
     // Body center of mass shifts with lean
     const bodyCenterX = physics.basePosX + Math.sin(physics.angle) * 100;
@@ -350,7 +358,16 @@ const BalanceGame = () => {
     mouseRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
+      side: mouseRef.current.side
     };
+  }, []);
+
+  const handleMouseClick = useCallback((e) => {
+    mouseRef.current = {
+      x: mouseRef.current.x,
+      y: mouseRef.current.y,
+      side: mouseRef.current.side === "left" ? "right" : "left"
+    }
   }, []);
 
   const handleTouchMove = useCallback((e) => {
@@ -363,6 +380,7 @@ const BalanceGame = () => {
     mouseRef.current = {
       x: touch.clientX - rect.left,
       y: touch.clientY - rect.top,
+      side: mouseRef.current.side
     };
   }, []);
 
@@ -408,6 +426,7 @@ const BalanceGame = () => {
           width={800}
           height={600}
           className="border border-gray-300 rounded cursor-none"
+          onClick={handleMouseClick}
           onMouseMove={handleMouseMove}
           onTouchMove={handleTouchMove}
         />
