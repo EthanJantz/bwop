@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
+//TODO: 
+// Change CalculateIK to take joints 
+// Switch controller from mouse to four buttons
+// Buttons control contraction of elbow and shoulder joints
+
 // Calculate inverse kinematics for arm
 const calculateIK = (
   shoulderX,
