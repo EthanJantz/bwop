@@ -1,47 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
-//TODO:
-// Change CalculateIK to take joints
-// Switch controller from mouse to four buttons
-// Buttons control contraction of elbow and shoulder joints
-
-// Calculate inverse kinematics for arm
-const calculateIK = (
-  shoulderX,
-  shoulderY,
-  targetX,
-  targetY,
-  armLength1,
-  armLength2,
-) => {
-  const dx = targetX - shoulderX;
-  const dy = targetY - shoulderY;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-
-  // Clamp distance to reachable range
-  const maxReach = armLength1 + armLength2;
-  const minReach = Math.abs(armLength1 - armLength2);
-  const clampedDistance = Math.max(minReach, Math.min(maxReach, distance));
-
-  // Calculate elbow position using law of cosines
-  const angle1 = Math.atan2(dy, dx);
-  const cosAngle2 =
-    (armLength1 * armLength1 +
-      clampedDistance * clampedDistance -
-      armLength2 * armLength2) /
-    (2 * armLength1 * clampedDistance);
-  const angle2 = Math.acos(Math.max(-1, Math.min(1, cosAngle2)));
-
-  const elbowX = shoulderX + armLength1 * Math.cos(angle1 + angle2);
-  const elbowY = shoulderY + armLength1 * Math.sin(angle1 + angle2);
-
-  // Calculate hand position
-  const handAngle = Math.atan2(targetY - elbowY, targetX - elbowX);
-  const handX = elbowX + armLength2 * Math.cos(handAngle);
-  const handY = elbowY + armLength2 * Math.sin(handAngle);
-
-  return { elbowX, elbowY, handX, handY };
-};
+// TODO
+// clamp controls
+// simultaneous keydown events
+// return angle to neutral when not doing anything
+// remove cursor
 
 const calculateArm = (
   shoulderX,
@@ -52,11 +15,11 @@ const calculateArm = (
   forearmAngle,
   whichArm,
 ) => {
-  const directionMult = whichArm == "right" ? -1 : 1;
-  const elbowX = shoulderX - armLength * Math.cos(armAngle) * directionMult;
-  const elbowY = shoulderY - armLength * Math.sin(armAngle);
-  const handX = elbowX - forearmLength * Math.cos(forearmAngle) * directionMult;
-  const handY = elbowY - forearmLength * Math.sin(forearmAngle);
+  const directionMult = whichArm == "right" ? 1 : -1;
+  const elbowX = shoulderX + armLength * Math.cos(armAngle) * directionMult;
+  const elbowY = shoulderY + armLength * Math.sin(armAngle);
+  const handX = elbowX + forearmLength * Math.cos(forearmAngle) * directionMult;
+  const handY = elbowY + forearmLength * Math.sin(forearmAngle);
   return { elbowX, elbowY, handX, handY };
 };
 
@@ -68,7 +31,7 @@ const armCenter = ({ elbowX, elbowY, handX, handY }) => {
 
 const BalanceGame = () => {
   const canvasRef = useRef(null);
-  const animationRef = useRef(null);
+  const animationRef: React.Ref<number | null> = useRef(null);
   const [gameState, setGameState] = useState("playing"); // 'playing', 'gameOver'
   const scoreRef = useRef(0);
   const mouseRef = useRef({ x: 400, y: 300, side: "left" });
@@ -102,18 +65,6 @@ const BalanceGame = () => {
     const hipY = footY - legLength;
     const shoulderY = hipY - bodyLength;
     const headY = shoulderY - headRadius - 10;
-
-    // some button/mouse press switches between left and right arm
-    switch (mousePos.side) {
-      case "left":
-        physics.leftArmPosX = mousePos.x;
-        physics.leftArmPosY = mousePos.y;
-        break;
-      case "right":
-        physics.rightArmPosX = mousePos.x;
-        physics.rightArmPosY = mousePos.y;
-        break;
-    }
 
     const leftArm = calculateArm(
       physics.basePosX + Math.sin(physics.angle),
@@ -383,26 +334,24 @@ const BalanceGame = () => {
     };
   }, []);
 
-  const handleMouseClick = useCallback((e) => {
-    mouseRef.current = {
-      x: mouseRef.current.x,
-      y: mouseRef.current.y,
-      side: mouseRef.current.side === "left" ? "right" : "left",
-    };
-  }, []);
-
-  const handleTouchMove = useCallback((e) => {
-    e.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    mouseRef.current = {
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top,
-      side: mouseRef.current.side,
-    };
+  const handleKeyDown = useCallback((e) => {
+    const physics = physicsRef.current;
+    switch (e.key) {
+      case ".":
+        physics.rightForearmAngle += 0.1;
+        break;
+      case ",":
+        physics.rightArmAngle += 0.1;
+        break;
+      case "z":
+        physics.leftArmAngle += 0.1;
+        break;
+      case "x":
+        physics.leftForearmAngle += 0.1;
+        break;
+      default:
+        break;
+    }
   }, []);
 
   // Reset game
@@ -413,10 +362,10 @@ const BalanceGame = () => {
       angularVelocity: 0,
       basePosX: 400,
       time: 0,
-      leftArmPosX: 200,
-      leftArmPosY: 200,
-      rightArmPosX: 200,
-      rightArmPosY: 200,
+      leftArmAngle: 0,
+      leftForearmAngle: 0,
+      rightArmAngle: 0,
+      rightForearmAngle: 0,
     };
     scoreRef.current = 0;
     setGameState("playing");
@@ -448,12 +397,11 @@ const BalanceGame = () => {
 
         <canvas
           ref={canvasRef}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
           width={800}
           height={600}
           className="border border-gray-300 rounded cursor-none"
-          onClick={handleMouseClick}
-          onMouseMove={handleMouseMove}
-          onTouchMove={handleTouchMove}
         />
 
         {gameState === "gameOver" && (
