@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
-//TODO: 
-// Change CalculateIK to take joints 
+//TODO:
+// Change CalculateIK to take joints
 // Switch controller from mouse to four buttons
 // Buttons control contraction of elbow and shoulder joints
 
@@ -43,6 +43,23 @@ const calculateIK = (
   return { elbowX, elbowY, handX, handY };
 };
 
+const calculateArm = (
+  shoulderX,
+  shoulderY,
+  armLength,
+  forearmLength,
+  armAngle,
+  forearmAngle,
+  whichArm,
+) => {
+  const directionMult = whichArm == "right" ? -1 : 1;
+  const elbowX = shoulderX - armLength * Math.cos(armAngle) * directionMult;
+  const elbowY = shoulderY - armLength * Math.sin(armAngle);
+  const handX = elbowX - forearmLength * Math.cos(forearmAngle) * directionMult;
+  const handY = elbowY - forearmLength * Math.sin(forearmAngle);
+  return { elbowX, elbowY, handX, handY };
+};
+
 const armCenter = ({ elbowX, elbowY, handX, handY }) => {
   const x = elbowX * 0.7 + handX * 0.3;
   const y = elbowY * 0.7 + handY * 0.3;
@@ -62,13 +79,11 @@ const BalanceGame = () => {
     angularVelocity: 0,
     basePosX: 400,
     time: 0,
-    leftArmPosX: 200,
-    leftArmPosY: 200,
-    rightArmPosX: 200,
-    rightArmPosY: 200
+    leftArmAngle: 0,
+    leftForearmAngle: 0,
+    rightArmAngle: 0,
+    rightForearmAngle: 0,
   });
-
-  
 
   const calculateBody = useCallback(() => {
     const canvas = canvasRef.current;
@@ -79,8 +94,8 @@ const BalanceGame = () => {
     const headRadius = 20;
     const bodyLength = 100;
     const legLength = 120;
-    const armLength1 = 40;
-    const armLength2 = 35;
+    const armLength = 40;
+    const forearmLength = 45;
 
     // Positions
     const footY = canvas.height - 50;
@@ -89,7 +104,7 @@ const BalanceGame = () => {
     const headY = shoulderY - headRadius - 10;
 
     // some button/mouse press switches between left and right arm
-    switch(mousePos.side) { 
+    switch (mousePos.side) {
       case "left":
         physics.leftArmPosX = mousePos.x;
         physics.leftArmPosY = mousePos.y;
@@ -99,32 +114,33 @@ const BalanceGame = () => {
         physics.rightArmPosY = mousePos.y;
         break;
     }
-    
-    // Calculate arm positions with IK
-    const leftArm = calculateIK(
-      physics.basePosX - Math.sin(physics.angle),
-      shoulderY,
-      physics.leftArmPosX,
-      physics.leftArmPosY,
-      armLength1,
-      armLength2,
-    );
 
-    const rightArm = calculateIK(
+    const leftArm = calculateArm(
       physics.basePosX + Math.sin(physics.angle),
       shoulderY,
-      physics.rightArmPosX,
-      physics.rightArmPosY,
-      armLength1,
-      armLength2,
+      armLength,
+      forearmLength,
+      physics.leftArmAngle,
+      physics.leftForearmAngle,
+      "left",
+    );
+
+    const rightArm = calculateArm(
+      physics.basePosX + Math.sin(physics.angle),
+      shoulderY,
+      armLength,
+      forearmLength,
+      physics.rightArmAngle,
+      physics.rightForearmAngle,
+      "right",
     );
 
     return {
       headRadius,
       bodyLength,
       legLength,
-      armLength1,
-      armLength2,
+      armLength1: armLength,
+      armLength2: forearmLength,
       footY,
       hipY,
       shoulderY,
@@ -363,7 +379,7 @@ const BalanceGame = () => {
     mouseRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
-      side: mouseRef.current.side
+      side: mouseRef.current.side,
     };
   }, []);
 
@@ -371,8 +387,8 @@ const BalanceGame = () => {
     mouseRef.current = {
       x: mouseRef.current.x,
       y: mouseRef.current.y,
-      side: mouseRef.current.side === "left" ? "right" : "left"
-    }
+      side: mouseRef.current.side === "left" ? "right" : "left",
+    };
   }, []);
 
   const handleTouchMove = useCallback((e) => {
@@ -385,7 +401,7 @@ const BalanceGame = () => {
     mouseRef.current = {
       x: touch.clientX - rect.left,
       y: touch.clientY - rect.top,
-      side: mouseRef.current.side
+      side: mouseRef.current.side,
     };
   }, []);
 
@@ -397,6 +413,10 @@ const BalanceGame = () => {
       angularVelocity: 0,
       basePosX: 400,
       time: 0,
+      leftArmPosX: 200,
+      leftArmPosY: 200,
+      rightArmPosX: 200,
+      rightArmPosY: 200,
     };
     scoreRef.current = 0;
     setGameState("playing");
