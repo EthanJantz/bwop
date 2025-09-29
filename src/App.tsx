@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // TODO
 // allow for reset with R key after game over
-// clamp controls
-// return angle to neutral when not doing anything
 // Maintain elbow angle when changing shoulder
 
 
@@ -16,11 +14,15 @@ const calculateArm = (
   forearmAngle,
   whichArm,
 ) => {
+  armAngle = Math.min(armAngle, Math.PI / 2)
+  forearmAngle = Math.min(forearmAngle, Math.PI)
+
   const directionMult = whichArm == "right" ? 1 : -1;
   const elbowX = shoulderX + armLength * Math.cos(armAngle) * directionMult;
   const elbowY = shoulderY + armLength * Math.sin(armAngle);
   const handX = elbowX + forearmLength * Math.cos(forearmAngle) * directionMult;
   const handY = elbowY + forearmLength * Math.sin(forearmAngle);
+  
   return { elbowX, elbowY, handX, handY };
 };
 
@@ -168,16 +170,18 @@ const BalanceGame = () => {
      for(const key of Object.keys(keysPressed.current)) {
       switch (key) {
         case ".":
-          physics.rightForearmAngle += 0.1;
+          physics.rightForearmAngle = Math.min(physics.rightForearmAngle + 0.1, Math.PI);
           break;
         case ",":
-          physics.rightArmAngle += 0.1;
+          physics.rightArmAngle = Math.min(physics.rightArmAngle + 0.1, Math.PI / 2);
           break;
         case "z":
-          physics.leftArmAngle += 0.1;
+          physics.leftArmAngle = Math.min(physics.leftArmAngle + 0.1, Math.PI / 2);
+
           break;
         case "x":
-          physics.leftForearmAngle += 0.1;
+          physics.leftForearmAngle = Math.min(physics.leftForearmAngle + 0.1, Math.PI);
+
           break;
         case "r":
           resetGame();
