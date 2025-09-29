@@ -349,6 +349,8 @@ const BalanceGame = () => {
       case "x":
         physics.leftForearmAngle += 0.1;
         break;
+      case " ":
+        resetGame();
       default:
         break;
     }
