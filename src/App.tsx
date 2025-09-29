@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // TODO
 // allow for reset with R key after game over
-// Maintain elbow angle when changing shoulder
+// do the math on arm angle calculations in caculateArm to get the arms to be actually straight
 
 
 const calculateArm = (
@@ -20,8 +20,8 @@ const calculateArm = (
   const directionMult = whichArm == "right" ? 1 : -1;
   const elbowX = shoulderX + armLength * Math.cos(armAngle) * directionMult;
   const elbowY = shoulderY + armLength * Math.sin(armAngle);
-  const handX = elbowX + forearmLength * Math.cos(forearmAngle) * directionMult;
-  const handY = elbowY + forearmLength * Math.sin(forearmAngle);
+  const handX = elbowX + forearmLength * Math.cos(forearmAngle + armAngle) * directionMult;
+  const handY = elbowY + forearmLength * Math.sin(forearmAngle + armAngle);
   
   return { elbowX, elbowY, handX, handY };
 };
@@ -146,7 +146,7 @@ const BalanceGame = () => {
       (bodyWeight + armWeight);
 
     // Calculate torque (distance from support point)
-    const torque = (totalCenterX - physics.basePosX) * 0.0008;
+    const torque = (totalCenterX - physics.basePosX) * 0.000000008;
 
     // Add some random disturbance for difficulty (reduced)
     const disturbance = (Math.random() - 0.5) * 0.0002;
