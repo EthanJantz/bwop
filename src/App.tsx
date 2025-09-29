@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // TODO
-// allow for reset with R key after game over
 // do the math on arm angle calculations in caculateArm to get the arms to be actually straight
 
 
@@ -146,7 +145,7 @@ const BalanceGame = () => {
       (bodyWeight + armWeight);
 
     // Calculate torque (distance from support point)
-    const torque = (totalCenterX - physics.basePosX) * 0.000000008;
+    const torque = (totalCenterX - physics.basePosX) * 0.0008;
 
     // Add some random disturbance for difficulty (reduced)
     const disturbance = (Math.random() - 0.5) * 0.0002;
@@ -335,7 +334,7 @@ const BalanceGame = () => {
       const deltaTime = timestamp - physicsRef.current.time;
       physicsRef.current.time = timestamp;
 
-     returnArmsToNeutral(); 
+      returnArmsToNeutral(); 
 
       updateInput();
 
@@ -383,6 +382,9 @@ const BalanceGame = () => {
   const handleKeyDown = useCallback((e) => {
     const physics = physicsRef.current;
     keysPressed.current[e.key] = true;
+    if(e.key == "r"){
+      resetGame();
+    }
   }, []);
   
 
