@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // TODO
 // do the math on arm angle calculations in caculateArm to get the arms to be actually straight
+// Big Head mode 
+// high score list (locally)
+// something happens after 60s (earthquake or something)
 
 
 const calculateArm = (
