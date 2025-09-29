@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 // simultaneous keydown events
 // return angle to neutral when not doing anything
 // remove cursor
+//
 
 const calculateArm = (
   shoulderX,
@@ -245,19 +246,6 @@ const BalanceGame = () => {
     ctx.stroke();
 
     ctx.restore();
-
-    // Draw target cursor
-    ctx.strokeStyle = "#FF6B6B";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(mousePos.x, mousePos.y, 15, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(mousePos.x - 20, mousePos.y);
-    ctx.lineTo(mousePos.x + 20, mousePos.y);
-    ctx.moveTo(mousePos.x, mousePos.y - 20);
-    ctx.lineTo(mousePos.x, mousePos.y + 20);
-    ctx.stroke();
 
     // Draw UI
     ctx.fillStyle = "#000";
