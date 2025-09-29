@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // TODO
+// allow for reset with R key after game over
 // clamp controls
-// simultaneous keydown events
 // return angle to neutral when not doing anything
-// remove cursor
-//
+// Maintain elbow angle when changing shoulder
+
 
 const calculateArm = (
   shoulderX,
@@ -36,6 +36,8 @@ const BalanceGame = () => {
   const [gameState, setGameState] = useState("playing"); // 'playing', 'gameOver'
   const scoreRef = useRef(0);
   const mouseRef = useRef({ x: 400, y: 300, side: "left" });
+  // Keys state
+  const keysPressed = useRef({})
 
   // Physics state
   const physicsRef = useRef({
@@ -48,6 +50,23 @@ const BalanceGame = () => {
     rightArmAngle: 0,
     rightForearmAngle: 0,
   });
+
+  const returnArmsToNeutral = useCallback(() => {
+    const pressure = 0.05
+    const physics = physicsRef.current
+    if(physics.leftArmAngle > 0){
+      physics.leftArmAngle -= pressure
+    }
+    if(physics.rightArmAngle > 0){
+      physics.rightArmAngle -= pressure
+    }
+    if(physics.rightForearmAngle > 0){
+      physics.rightForearmAngle -= pressure
+    }
+    if(physics.leftForearmAngle > 0){
+      physics.leftForearmAngle -= pressure
+    }
+  }, [])
 
   const calculateBody = useCallback(() => {
     const canvas = canvasRef.current;
@@ -142,6 +161,31 @@ const BalanceGame = () => {
     }
 
     return true; // Still balancing
+  }, []);
+
+  const updateInput = useCallback(() => {
+    const physics = physicsRef.current;
+     for(const key of Object.keys(keysPressed.current)) {
+      switch (key) {
+        case ".":
+          physics.rightForearmAngle += 0.1;
+          break;
+        case ",":
+          physics.rightArmAngle += 0.1;
+          break;
+        case "z":
+          physics.leftArmAngle += 0.1;
+          break;
+        case "x":
+          physics.leftForearmAngle += 0.1;
+          break;
+        case "r":
+          resetGame();
+          break;
+        default:
+          break;
+      }
+    }
   }, []);
 
   const draw = useCallback((ctx, canvas, score) => {
@@ -287,6 +331,10 @@ const BalanceGame = () => {
       const deltaTime = timestamp - physicsRef.current.time;
       physicsRef.current.time = timestamp;
 
+     returnArmsToNeutral(); 
+
+      updateInput();
+
       // Update physics
       if (deltaTime < 100) {
         // Prevent huge jumps
@@ -322,27 +370,18 @@ const BalanceGame = () => {
     };
   }, []);
 
+
+
+  const handleKeyUp = useCallback((e) => {
+    delete keysPressed.current[e.key];
+  }, [])
+
   const handleKeyDown = useCallback((e) => {
     const physics = physicsRef.current;
-    switch (e.key) {
-      case ".":
-        physics.rightForearmAngle += 0.1;
-        break;
-      case ",":
-        physics.rightArmAngle += 0.1;
-        break;
-      case "z":
-        physics.leftArmAngle += 0.1;
-        break;
-      case "x":
-        physics.leftForearmAngle += 0.1;
-        break;
-      case " ":
-        resetGame();
-      default:
-        break;
-    }
+    keysPressed.current[e.key] = true;
   }, []);
+  
+
 
   // Reset game
   // TODO: Wrap in useCallback
@@ -359,6 +398,7 @@ const BalanceGame = () => {
     };
     scoreRef.current = 0;
     setGameState("playing");
+    keysPressed.current = {};
   };
 
   // Start game loop
@@ -388,6 +428,7 @@ const BalanceGame = () => {
         <canvas
           ref={canvasRef}
           onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
           tabIndex={0}
           width={800}
           height={600}
