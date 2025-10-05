@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 // TODO
+// look nice
 // do the math on arm angle calculations in caculateArm to get the arms to be actually straight
 // Big Head mode 
 // high score list (locally)
@@ -8,13 +9,13 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 
 
 const calculateArm = (
-  shoulderX,
-  shoulderY,
-  armLength,
-  forearmLength,
-  armAngle,
-  forearmAngle,
-  whichArm,
+  shoulderX: number,
+  shoulderY: number,
+  armLength: number,
+  forearmLength: number,
+  armAngle: number,
+  forearmAngle: number,
+  whichArm: "left" | "right",
 ) => {
   armAngle = Math.min(armAngle, Math.PI / 2)
   forearmAngle = Math.min(forearmAngle, Math.PI)
@@ -24,24 +25,23 @@ const calculateArm = (
   const elbowY = shoulderY + armLength * Math.sin(armAngle);
   const handX = elbowX + forearmLength * Math.cos(forearmAngle + armAngle) * directionMult;
   const handY = elbowY + forearmLength * Math.sin(forearmAngle + armAngle);
-  
+
   return { elbowX, elbowY, handX, handY };
 };
 
-const armCenter = ({ elbowX, elbowY, handX, handY }) => {
+const armCenter = ({ elbowX, elbowY, handX, handY }: { elbowX: number, elbowY: number, handX: number, handY: number }) => {
   const x = elbowX * 0.7 + handX * 0.3;
   const y = elbowY * 0.7 + handY * 0.3;
   return { x, y };
 };
 
 const BalanceGame = () => {
-  const canvasRef = useRef(null);
-  const animationRef: React.Ref<number | null> = useRef(null);
-  const [gameState, setGameState] = useState("playing"); // 'playing', 'gameOver'
-  const scoreRef = useRef(0);
-  const mouseRef = useRef({ x: 400, y: 300, side: "left" });
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const [gameState, setGameState] = useState<"playing" | "gameOver">("playing"); // 'playing', 'gameOver'
+  const scoreRef = useRef<number>(0);
   // Keys state
-  const keysPressed = useRef({})
+  const keysPressed = useRef<{ [key: string]: boolean; }>({})
 
   // Physics state
   const physicsRef = useRef({
@@ -58,16 +58,16 @@ const BalanceGame = () => {
   const returnArmsToNeutral = useCallback(() => {
     const pressure = 0.05
     const physics = physicsRef.current
-    if(physics.leftArmAngle > 0){
+    if (physics.leftArmAngle > 0) {
       physics.leftArmAngle -= pressure
     }
-    if(physics.rightArmAngle > 0){
+    if (physics.rightArmAngle > 0) {
       physics.rightArmAngle -= pressure
     }
-    if(physics.rightForearmAngle > 0){
+    if (physics.rightForearmAngle > 0) {
       physics.rightForearmAngle -= pressure
     }
-    if(physics.leftForearmAngle > 0){
+    if (physics.leftForearmAngle > 0) {
       physics.leftForearmAngle -= pressure
     }
   }, [])
@@ -75,7 +75,8 @@ const BalanceGame = () => {
   const calculateBody = useCallback(() => {
     const canvas = canvasRef.current;
     const physics = physicsRef.current;
-    const mousePos = mouseRef.current;
+
+    if (!canvas) throw new Error("Canvas not initialized");
 
     // Figure dimensions
     const headRadius = 20;
@@ -123,16 +124,16 @@ const BalanceGame = () => {
       leftArm,
       rightArm,
     };
-  });
+  }, []);
 
-  const updatePhysics = useCallback((deltaTime) => {
+  const updatePhysics = useCallback((deltaTime: number) => {
     const physics = physicsRef.current;
 
     const body = calculateBody();
 
     // Calculate torque based on arm positions and center of mass
-    const armWeight = 0.3; // Weight contribution of arms
-    const bodyWeight = 0.7; // Weight of body
+    const armWeight = 0.55; // Weight contribution of arms
+    const bodyWeight = 0.45; // Weight of body
 
     // Body center of mass shifts with lean
     const bodyCenterX = physics.basePosX + Math.sin(physics.angle) * 100;
@@ -150,12 +151,12 @@ const BalanceGame = () => {
     // Calculate torque (distance from support point)
     const torque = (totalCenterX - physics.basePosX) * 0.0008;
 
-    // Add some random disturbance for difficulty (reduced)
-    const disturbance = (Math.random() - 0.5) * 0.0002;
+    // Add some random disturbance
+    const disturbance = (Math.random() - 0.5) * 0.05;
 
     // Update angular velocity and angle
-    physics.angularVelocity += (torque + disturbance) * deltaTime * 0.005; // Scale down by 0.001 for milliseconds
-    physics.angularVelocity *= 0.99; // Damping
+    physics.angularVelocity += (torque + disturbance) * deltaTime * 0.005;
+    //physics.angularVelocity *= 0.99; // Damping
     physics.angle += physics.angularVelocity * deltaTime * 0.005;
 
     // Check if fallen
@@ -169,7 +170,7 @@ const BalanceGame = () => {
 
   const updateInput = useCallback(() => {
     const physics = physicsRef.current;
-     for(const key of Object.keys(keysPressed.current)) {
+    for (const key of Object.keys(keysPressed.current)) {
       switch (key) {
         case ".":
           physics.rightForearmAngle = Math.min(physics.rightForearmAngle + 0.1, Math.PI);
@@ -194,9 +195,8 @@ const BalanceGame = () => {
     }
   }, []);
 
-  const draw = useCallback((ctx, canvas, score) => {
+  const draw = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     const physics = physicsRef.current;
-    const mousePos = mouseRef.current;
 
     const body = calculateBody();
 
@@ -299,8 +299,14 @@ const BalanceGame = () => {
 
     // Draw UI
     ctx.fillStyle = "#000";
-    ctx.font = "bold 24px Arial";
+    ctx.font = "bold 24px Comic Sans, Sans";
     ctx.fillText(`Time: ${scoreRef.current.toFixed(1)}s`, 20, 40);
+
+    // Draw instructions
+    ctx.fillText("R to reset", canvas.width * .75, 40);
+    ctx.fillText("Left arm: Z & X", canvas.width * .75, 60);
+    ctx.fillText('Right arm: , & .', canvas.width * .75, 80)
+
 
     // Draw balance indicator
     const indicatorWidth = 200;
@@ -318,18 +324,19 @@ const BalanceGame = () => {
   }, []);
 
   const gameLoop = useCallback(
-    (timestamp) => {
+    (timestamp: number) => {
       if (gameState !== "playing") return;
 
       const canvas = canvasRef.current;
       if (!canvas) return;
 
       const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("No rendering context");
 
       // Initialize time on first frame
       if (physicsRef.current.time === 0) {
         physicsRef.current.time = timestamp;
-        draw(ctx, canvas, scoreRef.current);
+        draw(ctx, canvas);
         animationRef.current = requestAnimationFrame(gameLoop);
         return;
       }
@@ -337,7 +344,7 @@ const BalanceGame = () => {
       const deltaTime = timestamp - physicsRef.current.time;
       physicsRef.current.time = timestamp;
 
-      returnArmsToNeutral(); 
+      returnArmsToNeutral();
 
       updateInput();
 
@@ -356,44 +363,27 @@ const BalanceGame = () => {
       }
 
       // Draw
-      draw(ctx, canvas, scoreRef.current);
+      draw(ctx, canvas);
 
       animationRef.current = requestAnimationFrame(gameLoop);
     },
     [gameState, updatePhysics],
   );
 
-  // Handle mouse/touch movement
-  const handleMouseMove = useCallback((e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    mouseRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      side: mouseRef.current.side,
-    };
-  }, []);
-
-
-
-  const handleKeyUp = useCallback((e) => {
+  const handleKeyUp = useCallback<React.KeyboardEventHandler>((e) => {
     delete keysPressed.current[e.key];
   }, [])
 
-  const handleKeyDown = useCallback((e) => {
-    const physics = physicsRef.current;
+  const handleKeyDown = useCallback<React.KeyboardEventHandler>((e) => {
     keysPressed.current[e.key] = true;
-    if(e.key == "r"){
+    if (e.key == "r") {
       resetGame();
     }
   }, []);
-  
+
 
 
   // Reset game
-  // TODO: Wrap in useCallback
   const resetGame = () => {
     physicsRef.current = {
       angle: 0,
@@ -416,6 +406,10 @@ const BalanceGame = () => {
       animationRef.current = requestAnimationFrame(gameLoop);
     }
 
+    if (gameState === "gameOver") {
+
+    }
+
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -424,44 +418,14 @@ const BalanceGame = () => {
   }, [gameState, gameLoop]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center mb-4">
-          Balance Challenge
-        </h1>
-        <p className="text-center text-gray-600 mb-4">
-          Move your cursor to control the arms. Keep balanced as long as
-          possible!
-        </p>
-
-        <canvas
-          ref={canvasRef}
-          onKeyDown={handleKeyDown}
-          onKeyUp={handleKeyUp}
-          tabIndex={0}
-          width={800}
-          height={600}
-          className="border border-gray-300 rounded cursor-none"
-        />
-
-        {gameState === "gameOver" && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg p-8 shadow-xl">
-              <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
-              <p className="text-lg mb-6">
-                You balanced for {scoreRef.current.toFixed(1)} seconds!
-              </p>
-              <button
-                onClick={resetGame}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded transition-colors"
-              >
-                Play Again
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
+      tabIndex={0}
+      width={800}
+      height={600}
+    />
   );
 };
 
