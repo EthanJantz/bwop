@@ -151,8 +151,8 @@ const BalanceGame = () => {
     // Calculate torque (distance from support point)
     const torque = (totalCenterX - physics.basePosX) * 0.0008;
 
-    // Add some random disturbance
-    const disturbance = (Math.random() - 0.5) * 0.05;
+    // Add some random disturbance, increases based on score
+    const disturbance = (Math.random() - 0.5) * 0.001 * scoreRef.current;
 
     // Update angular velocity and angle
     physics.angularVelocity += (torque + disturbance) * deltaTime * 0.005;
